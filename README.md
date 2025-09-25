@@ -12,6 +12,7 @@ Transform AI-generated text into **formal, human-like, and academic writing** wi
 ✅ **Add Academic Transitions**: Enhances coherence with phrases like **"Moreover"**, **"Therefore"**, etc.  
 ✅ **Passive Voice Conversion** *(Optional)*: "The researcher conducted the study" → "The study was conducted".  
 ✅ **Synonym Replacement** *(Optional)*: Replaces words with **more sophisticated alternatives**.  
+✅ **Structure Preservation**: **Maintains original formatting** including headings, paragraphs, and line breaks.  
 ✅ **Word & Sentence Statistics**: Instantly view **word and sentence counts** before and after transformation.  
 ✅ **Streamlit Web Interface**: Use a simple **web app** to input, transform, and copy text effortlessly.  
  

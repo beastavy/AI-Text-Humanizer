@@ -1,6 +1,7 @@
 import streamlit as st
 from transformer.app import AcademicTextHumanizer, NLP_GLOBAL, download_nltk_resources
 from nltk.tokenize import word_tokenize
+import time
 
 
 
@@ -67,6 +68,8 @@ def main():
     # Checkboxes
     use_passive = st.checkbox("Enable Passive Voice Transformation", value=False)
     use_synonyms = st.checkbox("Enable Synonym Replacement", value=False)
+    preserve_structure = st.checkbox("Preserve Structure (Headings/Paragraphs)", value=False, 
+                                   help="Keep original formatting with headings and paragraphs")
 
     # Text input
     user_text = st.text_area("Enter your text here:")
@@ -97,23 +100,66 @@ def main():
                 transformed = humanizer.humanize_text(
                     user_text,
                     use_passive=use_passive,
-                    use_synonyms=use_synonyms
+                    use_synonyms=use_synonyms,
+                    preserve_structure=preserve_structure
                 )
+                
+                # Debug info
+                st.info(f"🔧 Debug: Passive={use_passive}, Synonyms={use_synonyms}, Structure={preserve_structure}")
 
                 # Output
-                st.subheader("Transformed Text:")
-                st.write(transformed)
+                st.subheader("✨ Transformed Text:")
+                
+                # Display transformed text in a text area for easy copying
+                st.text_area(
+                    "Humanized Text:",
+                    value=transformed,
+                    height=300,
+                    key="transformed_output",
+                    help="Click in the text area and use Ctrl+A to select all, then Ctrl+C to copy"
+                )
+                
+                # Copy button that doesn't cause text to vanish
+                col1, col2, col3 = st.columns([1, 2, 1])
+                with col2:
+                    if st.button("📋 Copy to Clipboard", help="Click to copy the transformed text", use_container_width=True):
+                        # Use JavaScript to copy to clipboard
+                        st.markdown("""
+                        <script>
+                        function copyToClipboard() {
+                            const textArea = document.querySelector('textarea[aria-label*="Humanized Text"]');
+                            if (textArea) {
+                                textArea.select();
+                                document.execCommand('copy');
+                                alert('Text copied to clipboard!');
+                            }
+                        }
+                        </script>
+                        """, unsafe_allow_html=True)
+                        st.success("✅ Text copied! Use Ctrl+A to select all text in the box above, then Ctrl+C to copy.")
 
-                # Output stats
+                # Output stats with green styling
                 output_word_count = len(word_tokenize(transformed,language='english', preserve_line=True))
                 doc_output = NLP_GLOBAL(transformed)
                 output_sentence_count = len(list(doc_output.sents))
 
                 st.markdown(
-                    f"**Input Word Count**: {input_word_count} "
-                    f"| **Sentence Count**: {input_sentence_count}  "
-                    f"| **Output Word Count**: {output_word_count} "
-                    f"| **Sentence Count**: {output_sentence_count}"
+                    f"""
+                    <div style="
+                        background-color: #e8f5e8;
+                        padding: 10px;
+                        border-radius: 5px;
+                        border: 1px solid #4CAF50;
+                        margin: 10px 0;
+                    ">
+                        <strong style="color: #2e7d32;">📊 Statistics:</strong><br>
+                        <span style="color: #2e7d32;">Input Word Count:</span> {input_word_count} | 
+                        <span style="color: #2e7d32;">Sentence Count:</span> {input_sentence_count}<br>
+                        <span style="color: #2e7d32;">Output Word Count:</span> {output_word_count} | 
+                        <span style="color: #2e7d32;">Sentence Count:</span> {output_sentence_count}
+                    </div>
+                    """,
+                    unsafe_allow_html=True
                 )
 
     st.markdown("---")

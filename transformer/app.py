@@ -6,7 +6,14 @@ import nltk
 import spacy
 from nltk.tokenize import word_tokenize
 from nltk.corpus import wordnet
-from sentence_transformers import SentenceTransformer, util
+
+# Try to import sentence_transformers, but handle if not available
+try:
+    from sentence_transformers import SentenceTransformer, util
+    SENTENCE_TRANSFORMERS_AVAILABLE = True
+except ImportError:
+    SENTENCE_TRANSFORMERS_AVAILABLE = False
+    print("Warning: sentence-transformers not available. Synonym replacement will be limited.")
 
 warnings.filterwarnings("ignore", category=FutureWarning)
 
@@ -54,7 +61,12 @@ class AcademicTextHumanizer:
             random.seed(seed)
 
         self.nlp = spacy.load("en_core_web_sm")
-        self.model = SentenceTransformer(model_name)
+        
+        # Initialize sentence transformer only if available
+        if SENTENCE_TRANSFORMERS_AVAILABLE:
+            self.model = SentenceTransformer(model_name)
+        else:
+            self.model = None
 
         # Transformation probabilities
         self.p_passive = p_passive
@@ -67,8 +79,71 @@ class AcademicTextHumanizer:
             "Therefore,", "Consequently,", "Nonetheless,", "Nevertheless,"
         ]
 
-    def humanize_text(self, text, use_passive=False, use_synonyms=False):
-        doc = self.nlp(text)
+    def humanize_text(self, text, use_passive=False, use_synonyms=False, preserve_structure=False):
+        if preserve_structure:
+            # Structure preservation mode
+            lines = text.split('\n')
+            transformed_lines = []
+            
+            for line in lines:
+                line = line.strip()
+                
+                # Skip empty lines but preserve them
+                if not line:
+                    transformed_lines.append('')
+                    continue
+                
+                # Check if line looks like a heading
+                if self._is_heading(line):
+                    # Process heading with minimal changes
+                    processed_heading = self.expand_contractions(line)
+                    transformed_lines.append(processed_heading)
+                else:
+                    # Process as regular paragraph
+                    processed_paragraph = self._process_paragraph(line, use_passive, use_synonyms)
+                    transformed_lines.append(processed_paragraph)
+            
+            return '\n'.join(transformed_lines)
+        else:
+            # Original single-paragraph mode (default)
+            doc = self.nlp(text)
+            transformed_sentences = []
+
+            for sent in doc.sents:
+                sentence_str = sent.text.strip()
+
+                # 1. Expand contractions
+                sentence_str = self.expand_contractions(sentence_str)
+
+                # 2. Possibly add academic transitions
+                if random.random() < self.p_academic_transition:
+                    sentence_str = self.add_academic_transitions(sentence_str)
+
+                # 3. Optionally convert to passive
+                if use_passive and random.random() < self.p_passive:
+                    sentence_str = self.convert_to_passive(sentence_str)
+
+                # 4. Optionally replace words with synonyms
+                if use_synonyms and random.random() < self.p_synonym_replacement:
+                    sentence_str = self.replace_with_synonyms(sentence_str)
+
+                transformed_sentences.append(sentence_str)
+
+            return ' '.join(transformed_sentences)
+    
+    def _is_heading(self, line):
+        """Determine if a line is likely a heading"""
+        if len(line.split()) <= 8 and not line.endswith(('.', '!', '?')):
+            return True
+        if line.isupper() and len(line) < 50:
+            return True
+        if line.startswith(('Introduction', 'Conclusion', 'Methodology', 'Results', 'Discussion', 'Abstract')):
+            return True
+        return False
+    
+    def _process_paragraph(self, paragraph, use_passive=False, use_synonyms=False):
+        """Process a full paragraph while preserving sentence structure"""
+        doc = self.nlp(paragraph)
         transformed_sentences = []
 
         for sent in doc.sents:
@@ -180,11 +255,20 @@ class AcademicTextHumanizer:
     def _select_closest_synonym(self, original_word, synonyms):
         if not synonyms:
             return None
-        original_emb = self.model.encode(original_word, convert_to_tensor=True)
-        synonym_embs = self.model.encode(synonyms, convert_to_tensor=True)
-        cos_scores = util.cos_sim(original_emb, synonym_embs)[0]
-        max_score_index = cos_scores.argmax().item()
-        max_score = cos_scores[max_score_index].item()
-        if max_score >= 0.5:
-            return synonyms[max_score_index]
-        return None
+        
+        # If sentence transformers is not available, just return a random synonym
+        if not SENTENCE_TRANSFORMERS_AVAILABLE or self.model is None:
+            return random.choice(synonyms) if synonyms else None
+        
+        try:
+            original_emb = self.model.encode(original_word, convert_to_tensor=True)
+            synonym_embs = self.model.encode(synonyms, convert_to_tensor=True)
+            cos_scores = util.cos_sim(original_emb, synonym_embs)[0]
+            max_score_index = cos_scores.argmax().item()
+            max_score = cos_scores[max_score_index].item()
+            if max_score >= 0.5:
+                return synonyms[max_score_index]
+            return None
+        except Exception:
+            # Fallback to random selection if there's an error
+            return random.choice(synonyms) if synonyms else None

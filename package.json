@@ -1,0 +1,16 @@
+{
+  "name": "ai-text-humanizer-app",
+  "version": "1.0.0",
+  "description": "Transform AI-generated text into **formal, human-like, and academic writing** with ease, avoids AI detector! 🚀",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "electron": "^38.1.2",
+    "electron-builder": "^26.0.12"
+  }
+}
