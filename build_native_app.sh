@@ -1,0 +1,173 @@
+#!/bin/bash
+set -euo pipefail
+
+# Color codes for beautiful output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+BLUE='\033[0;34m'
+YELLOW='\033[1;33m'
+PURPLE='\033[0;35m'
+CYAN='\033[0;36m'
+NC='\033[0m' # No Color
+BOLD='\033[1m'
+
+# Configuration
+APP_NAME="AI Text Humanizer Pro"
+VERSION="1.0.0"
+BUNDLE_ID="com.aitexthumanizer.pro"
+PROJECT_ROOT="$(cd "$(dirname "$0")" && pwd)"
+BUILD_DIR="$PROJECT_ROOT/build"
+DIST_DIR="$PROJECT_ROOT/dist"
+DMG_DIR="$BUILD_DIR/dmg"
+DMG_NAME="AI-Text-Humanizer-Pro-$VERSION.dmg"
+
+# Print styled header
+print_header() {
+    echo ""
+    echo -e "${PURPLE}${BOLD}╔════════════════════════════════════════════╗${NC}"
+    echo -e "${PURPLE}${BOLD}║     AI Text Humanizer Pro - DMG Builder   ║${NC}"
+    echo -e "${PURPLE}${BOLD}╚════════════════════════════════════════════╝${NC}"
+    echo ""
+}
+
+# Progress indicator
+show_progress() {
+    echo -e "${CYAN}▸${NC} $1"
+}
+
+# Success message
+show_success() {
+    echo -e "${GREEN}✓${NC} $1"
+}
+
+# Error message
+show_error() {
+    echo -e "${RED}✗${NC} $1"
+}
+
+# Warning message
+show_warning() {
+    echo -e "${YELLOW}⚠${NC} $1"
+}
+
+print_header
+
+# Step 1: Check Python installation
+show_progress "Checking Python installation..."
+if command -v python3 &> /dev/null; then
+    PYTHON_VERSION=$(python3 --version | cut -d' ' -f2)
+    show_success "Python $PYTHON_VERSION found"
+else
+    show_error "Python 3 is required but not found"
+    echo "Please install Python 3 from https://www.python.org"
+    exit 1
+fi
+
+# Step 2: Create virtual environment if needed
+show_progress "Setting up virtual environment..."
+if [ ! -d "venv" ]; then
+    python3 -m venv venv
+    show_success "Virtual environment created"
+else
+    show_success "Virtual environment already exists"
+fi
+
+# Activate virtual environment
+source venv/bin/activate
+
+# Step 3: Install required packages
+show_progress "Installing required packages..."
+pip install --quiet --upgrade pip
+if [ -f "requirements.txt" ]; then
+    show_progress "Installing from requirements.txt..."
+    pip install --quiet -r requirements.txt
+else
+    show_progress "Installing core GUI/NLP libs..."
+    pip install --quiet PyQt6 pillow spacy nltk sentence-transformers
+fi
+pip install --quiet pyinstaller
+
+# Ensure spaCy English model is available (ignore errors if offline)
+python -m spacy download en_core_web_sm || true
+
+# Step 4: Clean previous builds
+show_progress "Cleaning previous builds..."
+rm -rf "$BUILD_DIR" "$DIST_DIR" *.spec
+mkdir -p "$BUILD_DIR" "$DMG_DIR"
+show_success "Build directories cleaned"
+
+# Step 5: Build the app
+show_progress "Building macOS application (this may take a few minutes)..."
+# Log full output for troubleshooting
+pyinstaller --onedir --windowed --name "AI Text Humanizer Pro" macos_app.py | tee "$BUILD_DIR/pyinstaller.log"
+
+# Step 6: Verify app bundle
+APP_DIR="$DIST_DIR/AI Text Humanizer Pro"
+if [ ! -d "$APP_DIR" ]; then
+    show_error "App directory was not created successfully"
+    exit 1
+fi
+show_success "Application directory created successfully"
+
+# Step 7: Create DMG installer
+show_progress "Creating DMG installer..."
+
+# Copy app to DMG staging
+cp -R "$APP_DIR" "$DMG_DIR/"
+
+# Create README file
+cat > "$DMG_DIR/README.txt" << 'README'
+AI Text Humanizer Pro
+=====================
+
+Installation:
+1. Drag "AI Text Humanizer Pro" to your Applications folder
+2. Double-click to launch
+
+Features:
+- Transform AI-generated text into natural writing
+- Multiple humanization modes
+- Beautiful native macOS interface
+- No internet connection required
+
+Enjoy using AI Text Humanizer Pro!
+README
+
+# Create the DMG
+show_progress "Building DMG package..."
+hdiutil create -volname "$APP_NAME" \
+    -srcfolder "$DMG_DIR" \
+    -ov -format UDZO \
+    "$BUILD_DIR/$DMG_NAME"
+
+# Step 8: Verify DMG
+if [ ! -f "$BUILD_DIR/$DMG_NAME" ]; then
+    show_error "DMG creation failed"
+    exit 1
+fi
+
+DMG_SIZE=$(du -h "$BUILD_DIR/$DMG_NAME" | cut -f1)
+
+# Final success message
+echo ""
+echo -e "${GREEN}${BOLD}╔════════════════════════════════════════════╗${NC}"
+echo -e "${GREEN}${BOLD}║         BUILD COMPLETED SUCCESSFULLY!      ║${NC}"
+echo -e "${GREEN}${BOLD}╚════════════════════════════════════════════╝${NC}"
+echo ""
+echo -e "${BOLD}📦 DMG Package:${NC} $BUILD_DIR/$DMG_NAME"
+echo -e "${BOLD}📏 Size:${NC} $DMG_SIZE"
+echo ""
+echo -e "${CYAN}${BOLD}Installation Instructions:${NC}"
+echo -e "  1. Double-click the DMG file"
+echo -e "  2. Drag 'AI Text Humanizer Pro' to Applications"
+echo -e "  3. Launch from Applications folder"
+echo ""
+echo -e "${GREEN}${BOLD}✨ Your app is ready to share with any Mac user!${NC}"
+echo ""
+
+# Open DMG in Finder
+show_progress "Opening DMG in Finder..."
+open "$BUILD_DIR"
+
+# Deactivate virtual environment
+deactivate

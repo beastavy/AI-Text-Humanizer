@@ -1,0 +1,104 @@
+🎉 AI Text Humanizer Pro - Quick Start Guide 🎉
+
+Thank you for receiving this AI Text Humanizer App!
+
+========================================
+📋 WHAT YOUR FRIEND SHARED WITH YOU:
+========================================
+
+✅ Complete application with all files
+✅ Automatic setup scripts
+✅ Advanced AI text transformation
+✅ Beautiful web interface
+
+========================================
+🚀 3 SIMPLE STEPS TO GET STARTED:
+========================================
+
+STEP 1: Install Python (if you don't have it)
+-------------------------------------------
+1. Go to: https://www.python.org/downloads/
+2. Download and install Python 3.10 or newer
+3. IMPORTANT: Check "Add Python to PATH" during installation
+4. Restart your computer if prompted
+
+STEP 2: Run Setup (install AI components)
+------------------------------------------
+Double-click this file to install everything:
+📁 SETUP.bat
+
+This will automatically:
+✅ Create virtual environment
+✅ Install all AI libraries (spaCy, NLTK, transformers)
+✅ Download language models
+✅ Setup advanced features
+
+STEP 3: Start the App
+---------------------
+Double-click this file to launch:
+📁 START.bat
+
+The app will automatically:
+✅ Find an available port
+✅ Open in your web browser
+✅ Load all advanced features
+
+========================================
+🎯 WHAT YOU GET:
+========================================
+
+✨ Advanced AI Processing:
+- AI-powered synonym replacement
+- Passive voice conversion
+- Academic transition insertion
+- Structure preservation
+
+🎨 Beautiful Interface:
+- Modern gradient design
+- Progress indicators
+- Advanced statistics
+- File upload support
+
+📊 Smart Features:
+- Auto port detection
+- Error handling
+- Word/sentence counting
+- Copy to clipboard
+
+========================================
+⚡ ALTERNATIVE OPTIONS:
+========================================
+
+🎯 Full Version (recommended):
+SETUP.bat → START.bat
+(Advanced AI features)
+
+🚀 Simple Version:
+START_SIMPLE.bat
+(Basic features, no setup needed)
+
+========================================
+🔧 TROUBLESHOOTING:
+========================================
+
+❌ "Python not found"?
+→ Install Python from python.org
+→ Check "Add Python to PATH"
+
+❌ "Port already in use"?
+→ The app automatically finds the next available port
+
+❌ Setup fails?
+→ Check internet connection
+→ Try running SETUP.bat again
+
+========================================
+🎉 ENJOY YOUR AI TEXT HUMANIZER! 🎉
+========================================
+
+Transform your AI-generated text into natural, human-like writing with advanced AI processing!
+
+Questions? Your friend can help you get started! 🚀
+
+
+

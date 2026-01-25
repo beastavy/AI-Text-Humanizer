@@ -65,3 +65,8 @@ To address this communication gap , Sarah is team should implement several strat
 5. **Click "Transform to Academic Style"**
 
 **The app is now running with both modes available!** 🎉
+
+
+
+
+

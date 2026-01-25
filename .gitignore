@@ -157,6 +157,15 @@ dmypy.json
 # pytype static type analyzer
 .pytype/
 
+# AI Text Humanizer Specific
+nltk_data/
+android-app/node_modules/
+android-app/dist/
+dist/
+build/
+*.spec
+.DS_Store
+
 # Cython debug symbols
 cython_debug/
 

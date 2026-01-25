@@ -1,0 +1,59 @@
+🚀 AI TEXT HUMANIZER PRO - MAC VERSION
+========================================
+
+SUPER SIMPLE INSTRUCTIONS FOR YOUR FRIEND:
+
+1. Make sure Python is installed:
+   - Go to: https://www.python.org/downloads/
+   - Download Python 3.10+ for macOS
+   - Install it (check "Add Python to PATH")
+
+2. Open Terminal (Cmd + Space, type "Terminal")
+
+3. Navigate to the app folder:
+   cd /path/to/AI-Text-Humanizer-App
+
+4. Make the script executable:
+   chmod +x run_mac.sh
+
+5. Run everything with ONE command:
+   ./run_mac.sh
+
+THAT'S IT! 
+
+The script will:
+✅ Check if Python is installed
+✅ Set up everything automatically (first time only)
+✅ Install all packages
+✅ Download language models
+✅ Start the app
+✅ Open in your browser
+
+The app will be available at: http://localhost:8501
+
+To stop the app: Press Ctrl+C in Terminal
+
+========================================
+WHAT THE APP DOES:
+- Makes AI text sound more human
+- Expands contractions
+- Adds academic transitions
+- Replaces synonyms
+- Converts passive voice
+- Preserves structure
+
+FEATURES:
+✅ Contraction expansion
+✅ Academic transitions  
+✅ Synonym replacement
+✅ Passive voice conversion
+✅ Structure preservation
+
+If you have any problems:
+1. Make sure Python 3.10+ is installed
+2. Check your internet connection
+3. Make sure you have at least 2GB free disk space
+4. Try running the script again
+
+The first run takes 5-10 minutes to download everything.
+After that, it starts in seconds!
