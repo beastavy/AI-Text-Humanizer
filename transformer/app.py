@@ -95,7 +95,21 @@ class AcademicTextHumanizer:
             "Therefore,", "Consequently,", "Nonetheless,", "Nevertheless,"
         ]
 
-    def humanize_text(self, text, use_passive=False, use_synonyms=False, preserve_structure=False):
+    def humanize_text(self, text, use_passive=False, use_synonyms=False, preserve_structure=False, intensity="medium"):
+        # Map intensity to probabilities
+        if intensity == "heavy":
+            p_passive_val = 0.7
+            p_synonym_val = 0.8
+            p_transition_val = 0.7
+        elif intensity == "light":
+            p_passive_val = 0.1
+            p_synonym_val = 0.2
+            p_transition_val = 0.2
+        else:  # medium (default)
+            p_passive_val = self.p_passive
+            p_synonym_val = self.p_synonym_replacement
+            p_transition_val = self.p_academic_transition
+
         if preserve_structure:
             # Structure preservation mode
             lines = text.split('\n')
@@ -116,7 +130,7 @@ class AcademicTextHumanizer:
                     transformed_lines.append(processed_heading)
                 else:
                     # Process as regular paragraph
-                    processed_paragraph = self._process_paragraph(line, use_passive, use_synonyms)
+                    processed_paragraph = self._process_paragraph(line, use_passive, use_synonyms, p_passive_val, p_synonym_val, p_transition_val)
                     transformed_lines.append(processed_paragraph)
 
             return '\n'.join(transformed_lines)
@@ -126,6 +140,9 @@ class AcademicTextHumanizer:
                 doc = self.nlp(text)
                 transformed_sentences = []
                 sentences_list = list(doc.sents)
+                
+                # If single sentence and heavy intensity, force at least one synonym or transition attempt
+                force_action = (len(sentences_list) == 1 and intensity == "heavy")
 
                 for i, sent in enumerate(sentences_list):
                     sentence_str = sent.text.strip()
@@ -136,18 +153,18 @@ class AcademicTextHumanizer:
                     # 2. Add academic transitions more intelligently
                     # Only add transitions between sentences (not to the first sentence)
                     # and only if the sentence doesn't already start with a transition
-                    if (i > 0 and random.random() < self.p_academic_transition
+                    if (i > 0 and random.random() < p_transition_val
                         and not sentence_str.startswith(('Moreover,', 'Furthermore,', 'Additionally,',
                                                        'However,', 'Nevertheless,', 'Therefore,',
                                                        'Hence,', 'Consequently,', 'And', 'But', 'Or'))):
                         sentence_str = self.add_academic_transitions(sentence_str)
 
                     # 3. Optionally convert to passive
-                    if use_passive and random.random() < self.p_passive:
+                    if use_passive and (random.random() < p_passive_val or force_action):
                         sentence_str = self.convert_to_passive(sentence_str)
 
                     # 4. Optionally replace words with synonyms
-                    if use_synonyms and random.random() < self.p_synonym_replacement:
+                    if use_synonyms and (random.random() < p_synonym_val or force_action):
                         sentence_str = self.replace_with_synonyms(sentence_str)
 
                     transformed_sentences.append(sentence_str)
@@ -203,7 +220,7 @@ class AcademicTextHumanizer:
             return True
         return False
     
-    def _process_paragraph(self, paragraph, use_passive=False, use_synonyms=False):
+    def _process_paragraph(self, paragraph, use_passive=False, use_synonyms=False, p_passive_val=0.2, p_synonym_val=0.3, p_transition_val=0.3):
         """Process a full paragraph while preserving sentence structure"""
         try:
             doc = self.nlp(paragraph)
@@ -219,18 +236,18 @@ class AcademicTextHumanizer:
                 # 2. Add academic transitions more intelligently
                 # Only add transitions between sentences (not to the first sentence)
                 # and only if the sentence doesn't already start with a transition
-                if (i > 0 and random.random() < self.p_academic_transition
+                if (i > 0 and random.random() < p_transition_val
                     and not sentence_str.startswith(('Moreover,', 'Furthermore,', 'Additionally,',
                                                    'However,', 'Nevertheless,', 'Therefore,',
                                                    'Hence,', 'Consequently,', 'And', 'But', 'Or'))):
                     sentence_str = self.add_academic_transitions(sentence_str)
 
                 # 3. Optionally convert to passive
-                if use_passive and random.random() < self.p_passive:
+                if use_passive and random.random() < p_passive_val:
                     sentence_str = self.convert_to_passive(sentence_str)
 
                 # 4. Optionally replace words with synonyms
-                if use_synonyms and random.random() < self.p_synonym_replacement:
+                if use_synonyms and random.random() < p_synonym_val:
                     sentence_str = self.replace_with_synonyms(sentence_str)
 
                 transformed_sentences.append(sentence_str)

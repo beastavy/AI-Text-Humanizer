@@ -69,7 +69,8 @@ def transform_text():
                 text,
                 use_passive=use_passive,
                 use_synonyms=use_synonyms,
-                preserve_structure=preserve_structure
+                preserve_structure=preserve_structure,
+                intensity=intensity
             )
         else:
             # Fallback to simple transformation if humanizer not available
