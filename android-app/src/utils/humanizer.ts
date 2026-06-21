@@ -8,6 +8,13 @@ interface TransformationStats {
   wordsAdded: number;
 }
 
+export interface HumanizerOptions {
+  useTransitions: boolean;
+  useSynonyms: boolean;
+  intensity: 'light' | 'medium' | 'heavy';
+  usePassive?: boolean;
+}
+
 const CONTRACTION_MAP: Record<string, string> = {
   "don't": "do not", "doesn't": "does not", "didn't": "did not",
   "won't": "will not", "can't": "cannot", "couldn't": "could not",
@@ -58,11 +65,7 @@ const SYNONYM_MAP: Record<string, string[]> = {
 
 export const humanizeLocal = (
   text: string,
-  options: {
-    useTransitions: boolean;
-    useSynonyms: boolean;
-    intensity: 'light' | 'medium' | 'heavy'
-  }
+  options: HumanizerOptions
 ): { transformed: string; stats: TransformationStats } => {
   if (!text.trim()) return { transformed: '', stats: { inputWords: 0, outputWords: 0, wordsAdded: 0 } };
 
@@ -140,7 +143,7 @@ export const humanizeLocal = (
 export const humanizeRemote = async (
   text: string,
   apiUrl: string,
-  options: any
+  options: HumanizerOptions
 ): Promise<{ transformed: string; stats: TransformationStats }> => {
   // Ensure no trailing slash
   const baseUrl = apiUrl.replace(/\/$/, '');

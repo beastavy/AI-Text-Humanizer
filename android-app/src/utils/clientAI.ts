@@ -27,12 +27,19 @@ const CONTRACTION_MAP: Record<string, string> = {
     "how's": "how is"
 };
 
+export interface ModelProgressData {
+    status: string;
+    progress: number;
+    file: string;
+}
+
 // Define the model class singleton
 class ClientAI {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     static instance: any = null;
     static modelName = 'Xenova/LaMini-Flan-T5-248M';
 
-    static async getInstance(progressCallback: (data: any) => void) {
+    static async getInstance(progressCallback: (data: ModelProgressData) => void) {
         if (!this.instance) {
             console.log('📦 Initializing Client AI Model (248M)...');
             this.instance = await pipeline('text2text-generation', this.modelName, {
@@ -58,7 +65,7 @@ const splitSentences = (text: string): string[] => {
 
 export const humanizeBalanced = async (
     text: string,
-    progressCallback: (data: any) => void
+    progressCallback: (data: ModelProgressData) => void
 ): Promise<{ transformed: string }> => {
     try {
         const generator = await ClientAI.getInstance(progressCallback);
@@ -120,7 +127,7 @@ export const humanizeBalanced = async (
 
                 results.push(finalSent);
 
-            } catch (e) {
+            } catch {
                 console.warn("Sentence generation failed, reusing original");
                 results.push(sentence);
             }

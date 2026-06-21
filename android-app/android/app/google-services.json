@@ -9,7 +9,7 @@
             "client_info": {
                 "mobilesdk_app_id": "1:123456789:android:abc123def456",
                 "android_client_info": {
-                    "package_name": "com.obsidian.humanizer"
+                    "package_name": "com.aitexthumanizer.pro"
                 }
             },
             "api_key": [

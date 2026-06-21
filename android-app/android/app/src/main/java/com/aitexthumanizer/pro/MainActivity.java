@@ -1,4 +1,4 @@
-package com.obsidian.humanizer;
+package com.aitexthumanizer.pro;
 
 import com.getcapacitor.BridgeActivity;
 

@@ -4,6 +4,13 @@ import { humanizeBalanced } from './utils/clientAI';
 import { initializeAds, showBannerAd } from './utils/ads';
 import './App.css';
 
+interface HistoryItem {
+  id: number;
+  text: string;
+  original: string;
+  date: string;
+}
+
 function App() {
   const [inputText, setInputText] = useState('');
   const [outputText, setOutputText] = useState('');
@@ -28,7 +35,7 @@ function App() {
     wordsAdded: 0
   });
 
-  const [history, setHistory] = useState<any[]>(() => {
+  const [history, setHistory] = useState<HistoryItem[]>(() => {
     try {
       const saved = localStorage.getItem('humanizer_history');
       return saved ? JSON.parse(saved) : [];
@@ -54,7 +61,7 @@ function App() {
           setIsCloudReady(false);
           console.log('❌ Cloud Error');
         }
-      } catch (e) {
+      } catch {
         setIsCloudReady(false);
         console.log('💤 Cloud Sleeping/Unreachable');
       }
@@ -141,7 +148,7 @@ function App() {
     // 1. Cleanup History
     const ONE_WEEK = 7 * 24 * 60 * 60 * 1000;
     const now = Date.now();
-    const cleanHistory = history.filter((item: any) => (now - item.id) < ONE_WEEK);
+    const cleanHistory = history.filter((item: HistoryItem) => (now - item.id) < ONE_WEEK);
 
     if (cleanHistory.length !== history.length) {
       setHistory(cleanHistory);
@@ -152,6 +159,7 @@ function App() {
     initializeAds().then(() => {
       showBannerAd();
     });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   /* Comparison View Helpers */
@@ -205,7 +213,7 @@ function App() {
                   <p className="text-muted">No history yet. Start humanizing!</p>
                 </div>
               ) : (
-                history.map((item: any) => (
+                history.map((item: HistoryItem) => (
                   <div key={item.id} className="history-item" onClick={() => {
                     triggerHaptic();
                     setInputText(item.original);
