@@ -34,16 +34,26 @@ const ACADEMIC_TRANSITIONS = [
 ];
 
 const SYNONYM_MAP: Record<string, string[]> = {
-  "good": ["advantageous", "beneficial", "exemplary", "favourable"],
-  "bad": ["detrimental", "problematic", "adverse", "suboptimal"],
-  "think": ["contemplate", "hypothesize", "postulate", "assert"],
-  "work": ["function", "operate", "perform", "execute"],
-  "problem": ["complication", "dilemma", "impediment", "challenge"],
-  "important": ["paramount", "pivotal", "essential", "significant"],
-  "many": ["multitudinous", "numerous", "copious", "myriad"],
-  "show": ["demonstrate", "illustrate", "elucidate", "manifest"],
-  "use": ["utilize", "employ", "implement", "deploy"],
-  "idea": ["concept", "paradigm", "proposition", "notion"]
+  "good": ["advantageous", "beneficial", "exemplary", "favourable", "superior"],
+  "bad": ["detrimental", "problematic", "adverse", "suboptimal", "unfavorable"],
+  "think": ["contemplate", "hypothesize", "postulate", "assert", "theorize"],
+  "work": ["function", "operate", "perform", "execute", "endeavor"],
+  "problem": ["complication", "dilemma", "impediment", "challenge", "obstacle"],
+  "important": ["paramount", "pivotal", "essential", "significant", "crucial"],
+  "many": ["multitudinous", "numerous", "copious", "myriad", "countless"],
+  "show": ["demonstrate", "illustrate", "elucidate", "manifest", "exhibit"],
+  "use": ["utilize", "employ", "implement", "deploy", "leverage"],
+  "idea": ["concept", "paradigm", "proposition", "notion", "construct"],
+  "make": ["construct", "fabricate", "generate", "produce", "synthesize"],
+  "help": ["assist", "aid", "facilitate", "support", "bolster"],
+  "change": ["alter", "modify", "transform", "adapt", "evolve"],
+  "big": ["substantial", "considerable", "extensive", "massive", "significant"],
+  "small": ["diminutive", "negligible", "minimal", "minute", "limited"],
+  "start": ["commence", "initiate", "inaugurate", "instigate", "launch"],
+  "end": ["conclude", "terminate", "cease", "finalize", "culminate"],
+  "need": ["require", "necessitate", "demand", "entail", "warrant"],
+  "say": ["articulate", "express", "state", "declare", "proclaim"],
+  "know": ["comprehend", "perceive", "understand", "grasp", "cognize"]
 };
 
 export const humanizeLocal = (
@@ -57,58 +67,68 @@ export const humanizeLocal = (
   if (!text.trim()) return { transformed: '', stats: { inputWords: 0, outputWords: 0, wordsAdded: 0 } };
 
   const inputWords = text.trim().split(/\s+/).length;
-  let result = text;
 
-  // 1. Expand Contractions
-  Object.entries(CONTRACTION_MAP).forEach(([contraction, expansion]) => {
-    const regex = new RegExp(`\\b${contraction}\\b`, 'gi');
-    result = result.replace(regex, (match) => {
-      return match[0] === match[0].toUpperCase()
-        ? expansion.charAt(0).toUpperCase() + expansion.slice(1)
-        : expansion;
+  // Split into paragraphs to preserve structure
+  const paragraphs = text.split('\n');
+
+  const transformedParagraphs = paragraphs.map(paragraph => {
+    if (!paragraph.trim()) return paragraph; // Preserve empty lines
+
+    let result = paragraph;
+
+    // 1. Expand Contractions
+    Object.entries(CONTRACTION_MAP).forEach(([contraction, expansion]) => {
+      const regex = new RegExp(`\\b${contraction}\\b`, 'gi');
+      result = result.replace(regex, (match) => {
+        return match[0] === match[0].toUpperCase()
+          ? expansion.charAt(0).toUpperCase() + expansion.slice(1)
+          : expansion;
+      });
     });
-  });
 
-  // 2. Add Academic Transitions
-  if (options.useTransitions) {
-    const sentences = result.split(/([.!?])\s+/);
-    if (sentences.length > 2) {
-      const pTransition = options.intensity === 'heavy' ? 0.5 : options.intensity === 'medium' ? 0.3 : 0.1;
+    // 2. Add Academic Transitions (Only for longer paragraphs)
+    if (options.useTransitions) {
+      const sentences = result.split(/([.!?])\s+/);
+      const pTransition = options.intensity === 'heavy' ? 0.7 : options.intensity === 'medium' ? 0.4 : 0.2;
 
-      for (let i = 2; i < sentences.length; i += 2) {
-        if (Math.random() < pTransition) {
+      for (let i = 0; i < sentences.length; i++) {
+        if (sentences[i].length < 5 || ['.', '!', '?'].includes(sentences[i])) continue;
+
+        if (i > 0 && Math.random() < pTransition) {
           const transition = ACADEMIC_TRANSITIONS[Math.floor(Math.random() * ACADEMIC_TRANSITIONS.length)];
-          if (sentences[i]) {
+          if (!sentences[i].trim().startsWith(transition)) {
             sentences[i] = transition + " " + sentences[i].charAt(0).toLowerCase() + sentences[i].slice(1);
           }
         }
       }
-      result = sentences.join('');
+      result = sentences.join(' '); // Rejoin with space within paragraph
     }
-  }
 
-  // 3. Synonym Replacement
-  if (options.useSynonyms) {
-    const pSynonym = options.intensity === 'heavy' ? 0.4 : options.intensity === 'medium' ? 0.2 : 0.1;
+    // 3. Synonym Replacement
+    if (options.useSynonyms) {
+      const pSynonym = options.intensity === 'heavy' ? 0.8 : options.intensity === 'medium' ? 0.5 : 0.3;
 
-    Object.entries(SYNONYM_MAP).forEach(([word, synonyms]) => {
-      const regex = new RegExp(`\\b${word}\\b`, 'gi');
-      result = result.replace(regex, (match) => {
-        if (Math.random() < pSynonym) {
-          const syn = synonyms[Math.floor(Math.random() * synonyms.length)];
-          return match[0] === match[0].toUpperCase()
-            ? syn.charAt(0).toUpperCase() + syn.slice(1)
-            : syn;
-        }
-        return match;
+      Object.entries(SYNONYM_MAP).forEach(([word, synonyms]) => {
+        const regex = new RegExp(`\\b${word}\\b`, 'gi');
+        result = result.replace(regex, (match) => {
+          if (Math.random() < pSynonym) {
+            const syn = synonyms[Math.floor(Math.random() * synonyms.length)];
+            return match[0] === match[0].toUpperCase()
+              ? syn.charAt(0).toUpperCase() + syn.slice(1)
+              : syn;
+          }
+          return match;
+        });
       });
-    });
-  }
+    }
+    return result;
+  });
 
-  const outputWords = result.trim().split(/\s+/).length;
+  const finalResult = transformedParagraphs.join('\n');
+  const outputWords = finalResult.trim().split(/\s+/).length;
 
   return {
-    transformed: result,
+    transformed: finalResult,
     stats: {
       inputWords,
       outputWords,
@@ -122,15 +142,19 @@ export const humanizeRemote = async (
   apiUrl: string,
   options: any
 ): Promise<{ transformed: string; stats: TransformationStats }> => {
-  const response = await fetch(`${apiUrl}/api/transform`, {
+  // Ensure no trailing slash
+  const baseUrl = apiUrl.replace(/\/$/, '');
+
+  const response = await fetch(`${baseUrl}/api/transform`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       text,
-      use_passive: true, // Advanced feature
+      use_passive: Boolean(options?.usePassive),
       use_synonyms: options.useSynonyms,
       intensity: options.intensity,
-      style: 'academic'
+      style: 'academic',
+      preserve_structure: true // Vital for headings/paragraphs
     })
   });
 

@@ -1,8 +1,8 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'com.aitexthumanizer.pro',
-  appName: 'AI Text Humanizer Pro',
+  appId: 'com.obsidian.humanizer',
+  appName: 'Humanizer Pro',
   webDir: 'dist'
 };
 

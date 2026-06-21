@@ -178,3 +178,15 @@ cython_debug/
 
 # PyPI configuration file
 .pypirc
+
+# Android build/release keys and binaries
+*.keystore
+*.properties
+*.aab
+*.apk
+
+# AI Text Humanizer Run logs
+humanized*.txt
+
+# Agent configuration and conversations
+.agent/

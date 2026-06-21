@@ -273,7 +273,7 @@ def main():
         # Intensity slider
         intensity = st.select_slider(
             "Transformation Intensity",
-            options=["Light", "Medium", "Heavy"],
+            options=["Light", "Medium", "Heavy", "Very Heavy"],
             value="Medium",
             help="Controls the strength of transformations applied"
         )
@@ -363,17 +363,20 @@ def main():
                         input_sentence_count = len(user_text.split('.'))
 
                     # Transform text with advanced features
+                    intensity_key = intensity.lower().replace(" ", "_")
                     humanizer = AcademicTextHumanizer(
-                        p_passive=0.4 if intensity == "Heavy" else 0.3 if intensity == "Medium" else 0.2,
-                        p_synonym_replacement=0.4 if intensity == "Heavy" else 0.3 if intensity == "Medium" else 0.2,
-                        p_academic_transition=0.5 if intensity == "Heavy" else 0.4 if intensity == "Medium" else 0.3
+                        p_passive=0.45 if intensity == "Very Heavy" else 0.4 if intensity == "Heavy" else 0.3 if intensity == "Medium" else 0.2,
+                        p_synonym_replacement=0.5 if intensity == "Very Heavy" else 0.4 if intensity == "Heavy" else 0.3 if intensity == "Medium" else 0.2,
+                        p_academic_transition=0.6 if intensity == "Very Heavy" else 0.5 if intensity == "Heavy" else 0.4 if intensity == "Medium" else 0.3
                     )
 
                     transformed = humanizer.humanize_text(
                         user_text,
                         use_passive=use_passive,
                         use_synonyms=use_synonyms,
-                        preserve_structure=preserve_structure
+                        preserve_structure=preserve_structure,
+                        intensity=intensity_key,
+                        style="academic"
                     )
 
                     # Output statistics

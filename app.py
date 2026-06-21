@@ -7,6 +7,7 @@ from flask import Flask, request, jsonify, render_template
 from flask_cors import CORS
 import sys
 import os
+import re
 
 # Add the transformer module to the path
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
@@ -56,6 +57,12 @@ def transform_text():
         if not text:
             return jsonify({'error': 'Empty text provided'}), 400
         
+        # Enforce word limit
+        MAX_WORDS = 5000
+        word_count = len(text.split())
+        if word_count > MAX_WORDS:
+            return jsonify({'error': f'Text exceeds the {MAX_WORDS} word limit ({word_count} words). Please shorten your text.'}), 400
+        
         # Get options from request
         use_passive = data.get('use_passive', False)
         use_synonyms = data.get('use_synonyms', False)
@@ -70,20 +77,19 @@ def transform_text():
                 use_passive=use_passive,
                 use_synonyms=use_synonyms,
                 preserve_structure=preserve_structure,
-                intensity=intensity
+                intensity=intensity,
+                style=style
             )
         else:
             # Fallback to simple transformation if humanizer not available
-            transformed = simple_transform(text, use_passive, use_synonyms)
+            transformed = simple_transform(text, use_passive, use_synonyms, intensity, style)
         
-        # Calculate statistics
-        input_word_count = len(word_tokenize(text, language='english', preserve_line=True))
-        doc_input = NLP_GLOBAL(text)
-        input_sentence_count = len(list(doc_input.sents))
-        
-        output_word_count = len(word_tokenize(transformed, language='english', preserve_line=True))
-        doc_output = NLP_GLOBAL(transformed)
-        output_sentence_count = len(list(doc_output.sents))
+        # Calculate statistics with safe fallbacks
+        input_word_count = count_words(text)
+        input_sentence_count = count_sentences(text)
+
+        output_word_count = count_words(transformed)
+        output_sentence_count = count_sentences(transformed)
         
         return jsonify({
             'success': True,
@@ -136,10 +142,10 @@ def health_check():
         'spacy_available': True
     })
 
-def simple_transform(text, use_passive=False, use_synonyms=False):
+def simple_transform(text, use_passive=False, use_synonyms=False, intensity='medium', style='academic'):
     """Simple fallback transformation if full humanizer is not available"""
-    import re
-    
+    import random
+
     # Basic contraction expansion
     contractions = {
         "don't": "do not", "doesn't": "does not", "didn't": "did not",
@@ -165,19 +171,80 @@ def simple_transform(text, use_passive=False, use_synonyms=False):
     for contraction, expansion in contractions.items():
         pattern = r'\b' + re.escape(contraction) + r'\b'
         result = re.sub(pattern, expansion, result, flags=re.IGNORECASE)
-    
-    # Add basic transitions
-    transitions = ["Moreover,", "Additionally,", "Furthermore,", "Hence,", "Therefore,", "Consequently,", "Nonetheless,", "Nevertheless,"]
-    sentences = result.split('. ')
-    if len(sentences) > 1:
-        import random
-        for i in range(1, len(sentences)):
-            if random.random() < 0.3:
-                transition = random.choice(transitions)
-                sentences[i] = f"{transition} {sentences[i]}"
-        result = '. '.join(sentences)
-    
+
+    # Add style-aware transitions
+    style_transitions = {
+        "academic": ["Moreover,", "Additionally,", "Furthermore,", "Hence,", "Therefore,", "Consequently,", "Nonetheless,", "Nevertheless,"],
+        "professional": ["Additionally,", "As a result,", "In summary,", "Importantly,", "Moving forward,", "With this in mind,"],
+        "formal": ["Furthermore,", "Moreover,", "Accordingly,", "Thus,", "In light of the above,", "Notwithstanding,"]
+    }
+    transitions = style_transitions.get(str(style).lower(), style_transitions["academic"])
+    sentence_parts = [s.strip() for s in re.split(r'(?<=[.!?])\s+', result) if s.strip()]
+    intensity_level = str(intensity).lower()
+    if len(sentence_parts) > 1:
+        if intensity_level == 'very_heavy':
+            p_transition = 0.8
+        elif intensity_level == 'heavy':
+            p_transition = 0.5
+        elif intensity_level == 'light':
+            p_transition = 0.2
+        else:
+            p_transition = 0.35
+        transition_added = False
+        for i in range(1, len(sentence_parts)):
+            if random.random() < p_transition:
+                sentence_parts[i] = f"{random.choice(transitions)} {sentence_parts[i]}"
+                transition_added = True
+        if not transition_added:
+            sentence_parts[1] = f"{random.choice(transitions)} {sentence_parts[1]}"
+        result = " ".join(sentence_parts)
+
+    if use_synonyms:
+        synonyms = {
+            "good": "strong", "bad": "poor", "important": "significant",
+            "help": "assist", "show": "demonstrate", "use": "utilize",
+            "start": "commence", "end": "conclude", "think": "consider",
+            "get": "obtain", "make": "produce"
+        }
+        synonym_replaced = False
+        for word, replacement in synonyms.items():
+            pattern = r'\b' + re.escape(word) + r'\b'
+            p_synonym = 0.55 if intensity_level == 'very_heavy' else 0.4 if intensity_level == 'heavy' else 0.25 if intensity_level == 'light' else 0.35
+            if random.random() < p_synonym:
+                new_result = re.sub(pattern, replacement, result, flags=re.IGNORECASE)
+                if new_result != result:
+                    synonym_replaced = True
+                result = new_result
+
+        # Ensure at least one visible synonym change when enabled.
+        if not synonym_replaced:
+            for word, replacement in synonyms.items():
+                pattern = r'\b' + re.escape(word) + r'\b'
+                new_result, count = re.subn(pattern, replacement, result, count=1, flags=re.IGNORECASE)
+                if count > 0:
+                    result = new_result
+                    break
+
+    if use_passive:
+        # Minimal safe passive-like rewrites for common pronoun openings.
+        result = re.sub(r"\bwe\s+can\b", "it can be", result, flags=re.IGNORECASE)
+        result = re.sub(r"\bwe\s+will\b", "it will be", result, flags=re.IGNORECASE)
+        result = re.sub(r"\bthey\s+can\b", "it can be", result, flags=re.IGNORECASE)
+        result = re.sub(r"\byou\s+should\b", "it should be", result, flags=re.IGNORECASE)
+
     return result
+
+def count_words(text):
+    try:
+        return len(word_tokenize(text, language='english', preserve_line=True))
+    except Exception:
+        return len(re.findall(r"\b\w+\b", text))
+
+def count_sentences(text):
+    try:
+        return len(list(NLP_GLOBAL(text).sents))
+    except Exception:
+        return len([s for s in re.split(r"[.!?]+", text) if s.strip()])
 
 if __name__ == '__main__':
     print("🚀 Starting AI Text Humanizer Pro Flask Server...")

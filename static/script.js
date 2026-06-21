@@ -12,7 +12,7 @@ class TextHumanizerFrontend {
             const response = await fetch(`${this.apiBaseUrl}/health`);
             const data = await response.json();
             this.isBackendAvailable = data.status === 'healthy';
-            
+
             if (this.isBackendAvailable) {
                 console.log('✅ Python backend is available with full libraries');
                 this.showBackendStatus('Python Backend Active', 'success');
@@ -34,7 +34,7 @@ class TextHumanizerFrontend {
             <span class="status-icon">${type === 'success' ? '🐍' : '⚠️'}</span>
             <span class="status-text">${message}</span>
         `;
-        
+
         const header = document.querySelector('.header-content');
         if (header && !document.querySelector('.backend-status')) {
             header.appendChild(statusElement);
@@ -71,7 +71,7 @@ class TextHumanizerFrontend {
             }
 
             const data = await response.json();
-            
+
             if (data.success) {
                 return {
                     transformedText: data.transformed_text,
@@ -111,7 +111,7 @@ class TextHumanizerFrontend {
         };
 
         const transitions = [
-            "Moreover,", "Additionally,", "Furthermore,", "Hence,", 
+            "Moreover,", "Additionally,", "Furthermore,", "Hence,",
             "Therefore,", "Consequently,", "Nonetheless,", "Nevertheless,"
         ];
 
@@ -133,9 +133,10 @@ class TextHumanizerFrontend {
 
         // Add transitions
         const sentences = result.split('. ');
+        const pTransition = options.intensity === 'very_heavy' ? 0.8 : options.intensity === 'heavy' ? 0.5 : options.intensity === 'light' ? 0.2 : 0.3;
         if (sentences.length > 1) {
             for (let i = 1; i < sentences.length; i++) {
-                if (Math.random() < 0.3) {
+                if (Math.random() < pTransition) {
                     const transition = transitions[Math.floor(Math.random() * transitions.length)];
                     sentences[i] = `${transition} ${sentences[i]}`;
                 }
@@ -170,7 +171,7 @@ class TextHumanizerFrontend {
     convertToPassive(text) {
         const sentences = text.split('. ');
         const passiveSentences = [];
-        
+
         for (let sentence of sentences) {
             if (Math.random() < 0.2) {
                 sentence = sentence.replace(/\bI do\b/gi, "It is done by me");
@@ -180,15 +181,17 @@ class TextHumanizerFrontend {
             }
             passiveSentences.push(sentence);
         }
-        
+
         return passiveSentences.join('. ');
     }
 
     replaceWithSynonyms(text, synonyms) {
         let result = text;
+        const intensity = document.getElementById('intensity')?.value || 'medium';
+        const pSynonym = intensity === 'very_heavy' ? 0.6 : intensity === 'heavy' ? 0.4 : intensity === 'light' ? 0.2 : 0.3;
         for (const [word, synonym] of Object.entries(synonyms)) {
             const pattern = new RegExp(`\\b${this.escapeRegExp(word)}\\b`, 'gi');
-            if (Math.random() < 0.3) {
+            if (Math.random() < pSynonym) {
                 result = result.replace(pattern, synonym);
             }
         }
@@ -217,22 +220,22 @@ class TextHumanizerFrontend {
                 console.error('Failed to get sample from backend:', error);
             }
         }
-        
+
         // Fallback sample texts
         const sampleTexts = [
             "I don't think this approach will work. It's not good enough for our needs. We can't implement it without proper planning. The team needs to understand the requirements better before we proceed.",
             "You're right about the issue. We should fix it as soon as possible. It's important to get this done quickly. Let me know if you need any help with the implementation.",
             "The project is going well. We've made good progress this week. The team is working hard and we're on track to meet our deadlines. I think we can finish everything on time."
         ];
-        
+
         return sampleTexts[Math.floor(Math.random() * sampleTexts.length)];
     }
 }
 
 // Initialize the app
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     const humanizer = new TextHumanizerFrontend();
-    
+
     // Get DOM elements
     const inputText = document.getElementById('inputText');
     const outputText = document.getElementById('outputText');
@@ -241,28 +244,66 @@ document.addEventListener('DOMContentLoaded', function() {
     const outputSection = document.getElementById('outputSection');
     const loadingOverlay = document.getElementById('loadingOverlay');
     const successToast = document.getElementById('successToast');
-    
+
     // Configuration elements
     const usePassive = document.getElementById('usePassive');
     const useSynonyms = document.getElementById('useSynonyms');
     const preserveStructure = document.getElementById('preserveStructure');
     const intensity = document.getElementById('intensity');
     const style = document.getElementById('style');
-    
+
     // Quick action buttons
     const loadSample = document.getElementById('loadSample');
     const clearAll = document.getElementById('clearAll');
-    
+
     // Statistics elements
     const inputWords = document.getElementById('inputWords');
     const inputSentences = document.getElementById('inputSentences');
     const outputWords = document.getElementById('outputWords');
     const outputSentences = document.getElementById('outputSentences');
 
-    // Transform button click handler
-    transformBtn.addEventListener('click', async function() {
+    // Word counter elements
+    const wordCounter = document.getElementById('wordCounter');
+    const wordCountText = document.getElementById('wordCountText');
+    const charCountText = document.getElementById('charCountText');
+    const MAX_WORDS = 5000;
+
+    // Dynamic copyright year
+    const copyrightYear = document.getElementById('copyrightYear');
+    if (copyrightYear) {
+        copyrightYear.textContent = new Date().getFullYear();
+    }
+
+    // Live word counter
+    function updateWordCounter() {
         const text = inputText.value.trim();
-        
+        const words = text ? text.split(/\s+/).filter(w => w.length > 0).length : 0;
+        const chars = inputText.value.length;
+
+        if (wordCountText) {
+            wordCountText.textContent = `${words.toLocaleString()} / ${MAX_WORDS.toLocaleString()} words`;
+        }
+        if (charCountText) {
+            charCountText.textContent = `${chars.toLocaleString()} characters`;
+        }
+
+        if (wordCounter) {
+            wordCounter.classList.remove('warning', 'error');
+            if (words > MAX_WORDS) {
+                wordCounter.classList.add('error');
+            } else if (words > MAX_WORDS * 0.8) {
+                wordCounter.classList.add('warning');
+            }
+        }
+    }
+
+    inputText.addEventListener('input', updateWordCounter);
+    updateWordCounter(); // initial state
+
+    // Transform function (used by button and keyboard shortcut)
+    async function doTransform() {
+        const text = inputText.value.trim();
+
         if (!text) {
             showToast('Please enter some text to transform.', 'error');
             return;
@@ -306,12 +347,23 @@ document.addEventListener('DOMContentLoaded', function() {
             // Hide loading overlay
             hideLoadingOverlay();
         }
+    }
+
+    // Transform button click handler
+    transformBtn.addEventListener('click', doTransform);
+
+    // Keyboard shortcut: Ctrl+Enter to transform
+    inputText.addEventListener('keydown', function (e) {
+        if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+            e.preventDefault();
+            doTransform();
+        }
     });
 
     // Copy button click handler
-    copyBtn.addEventListener('click', function() {
+    copyBtn.addEventListener('click', function () {
         const text = outputText.value;
-        
+
         if (!text) {
             showToast('No text to copy.', 'error');
             return;
@@ -329,23 +381,23 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // Load sample text
-    loadSample.addEventListener('click', async function() {
+    loadSample.addEventListener('click', async function () {
         const sampleText = await humanizer.getSampleText();
         inputText.value = sampleText;
         showToast('Sample text loaded!', 'success');
     });
 
     // Clear all
-    clearAll.addEventListener('click', function() {
+    clearAll.addEventListener('click', function () {
         inputText.value = '';
         outputText.value = '';
         outputSection.style.display = 'none';
-        
+
         // Reset checkboxes
         usePassive.checked = false;
         useSynonyms.checked = false;
         preserveStructure.checked = false;
-        
+
         showToast('All cleared!', 'success');
     });
 
@@ -364,9 +416,9 @@ document.addEventListener('DOMContentLoaded', function() {
         const toast = successToast;
         const toastMessage = toast.querySelector('.toast-message');
         const toastIcon = toast.querySelector('.toast-icon');
-        
+
         toastMessage.textContent = message;
-        
+
         if (type === 'success') {
             toast.className = 'toast toast-success';
             toastIcon.textContent = '✅';
@@ -374,13 +426,13 @@ document.addEventListener('DOMContentLoaded', function() {
             toast.className = 'toast toast-error';
             toastIcon.textContent = '❌';
         }
-        
+
         toast.style.display = 'flex';
-        
-        // Hide after 3 seconds
+
+        // Hide after 4 seconds
         setTimeout(() => {
             toast.style.display = 'none';
-        }, 3000);
+        }, 4000);
     }
 
     // Smooth scrolling for navigation links
@@ -400,11 +452,11 @@ document.addEventListener('DOMContentLoaded', function() {
     // Add some interactive effects
     const featureCards = document.querySelectorAll('.feature-card');
     featureCards.forEach(card => {
-        card.addEventListener('mouseenter', function() {
+        card.addEventListener('mouseenter', function () {
             this.style.transform = 'translateY(-5px)';
         });
-        
-        card.addEventListener('mouseleave', function() {
+
+        card.addEventListener('mouseleave', function () {
             this.style.transform = 'translateY(0)';
         });
     });
@@ -413,7 +465,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const headerTitle = document.querySelector('.header-title');
     const originalText = headerTitle.textContent;
     headerTitle.textContent = '';
-    
+
     let i = 0;
     const typeWriter = () => {
         if (i < originalText.length) {
@@ -422,7 +474,7 @@ document.addEventListener('DOMContentLoaded', function() {
             setTimeout(typeWriter, 100);
         }
     };
-    
+
     // Start typing effect after a short delay
     setTimeout(typeWriter, 500);
 
